@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Honeypot Dashboard</title>
+    <!-- TailwindCSS + Flowbite CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/flowbite/2.3.0/flowbite.min.js"></script>
+    <script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+</head>
+<body class="bg-gray-100">
+
+<nav class="bg-gray-900 text-white p-4 shadow">
+    <div class="flex justify-between items-center container mx-auto">
+        <div class="text-2xl font-bold">Honeypot Dashboard</div>
+        <a href="{{ url_for('logout') }}" class="bg-red-500 hover:bg-red-700 px-4 py-2 rounded transition">Logout</a>
+    </div>
+</nav>
+
+<div class="container mx-auto mt-6">
+    <!-- Cards Row -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div class="bg-white rounded-xl shadow p-6 flex flex-col items-center">
+            <div class="text-sm text-gray-500">Total SSH Attacks</div>
+            <div class="text-2xl font-bold text-blue-600">{{ ssh['ip_attempts'].values()|sum }}</div>
+        </div>
+        <div class="bg-white rounded-xl shadow p-6 flex flex-col items-center">
+            <div class="text-sm text-gray-500">Total Web Attacks</div>
+            <div class="text-2xl font-bold text-pink-600">{{ web['ip_attempts'].values()|sum }}</div>
+        </div>
+        <div class="bg-white rounded-xl shadow p-6 flex flex-col items-center">
+            <div class="text-sm text-gray-500">Unique SSH IPs</div>
+            <div class="text-2xl font-bold text-green-600">{{ ssh['ips']|length }}</div>
+        </div>
+        <div class="bg-white rounded-xl shadow p-6 flex flex-col items-center">
+            <div class="text-sm text-gray-500">Unique Web IPs</div>
+            <div class="text-2xl font-bold text-yellow-500">{{ web['ip_attempts']|length }}</div>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <!-- SSH Top Attackers -->
+        <div class="bg-white rounded-xl shadow p-6">
+            <div class="text-xl font-semibold mb-4 flex items-center">
+                <svg class="h-6 w-6 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M17 9V7a5 5 0 00-10 0v2M5 9v10a2 2 0 002 2h10a2 2 0 002-2V9" /></svg>
+                Top SSH Attacker IPs
+            </div>
+            <ul>
+                {% for ip, count, cc, country in ssh_top_geo %}
+                <li class="flex items-center mb-2">
+                    {% if cc %}
+                    <img src="https://flagcdn.com/24x18/{{ cc|lower }}.png"
+                         class="inline mr-2 rounded shadow"
+                         width="24" height="18" alt="{{ cc }}">
+                    {% endif %}
+                    <span class="font-mono text-sm">{{ ip }}</span>
+                    <span class="text-gray-500 ml-2">({{ country }})</span>
+                    <span class="ml-auto font-bold text-blue-600">{{ count }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            <div id="ssh_ip_bar" class="mt-6"></div>
+        </div>
+        <!-- Web Top Attackers -->
+        <div class="bg-white rounded-xl shadow p-6">
+            <div class="text-xl font-semibold mb-4 flex items-center">
+                <svg class="h-6 w-6 mr-2 text-pink-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" /></svg>
+                Top Web Attacker IPs
+            </div>
+            <ul>
+                {% for ip, count, cc, country in web_top_geo %}
+                <li class="flex items-center mb-2">
+                    {% if cc %}
+                    <img src="https://flagcdn.com/24x18/{{ cc|lower }}.png"
+                         class="inline mr-2 rounded shadow"
+                         width="24" height="18" alt="{{ cc }}">
+                    {% endif %}
+                    <span class="font-mono text-sm">{{ ip }}</span>
+                    <span class="text-gray-500 ml-2">({{ country }})</span>
+                    <span class="ml-auto font-bold text-pink-600">{{ count }}</span>
+                </li>
+                {% endfor %}
+            </ul>
+            <div id="web_ip_bar" class="mt-6"></div>
+        </div>
+    </div>
+
+    <!-- Charts Row -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <div class="bg-white rounded-xl shadow p-6">
+            <div class="text-lg font-semibold mb-4">SSH Attacks Per Day</div>
+            <div id="ssh_time_chart"></div>
+        </div>
+        <div class="bg-white rounded-xl shadow p-6">
+            <div class="text-lg font-semibold mb-4">Web Attacks Per Day</div>
+            <div id="web_time_chart"></div>
+        </div>
+    </div>
+
+    <!-- SSH Commands / Web Credentials -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div class="bg-white rounded-xl shadow p-6">
+            <div class="text-lg font-semibold mb-4">Top SSH Commands</div>
+            <ul>
+                {% for cmd, count in ssh_top_cmds %}
+                <li class="mb-1"><span class="font-mono bg-gray-200 rounded px-2 py-1">{{ cmd }}</span> <span class="text-blue-500 font-bold ml-2">{{ count }}</span></li>
+                {% endfor %}
+            </ul>
+            <div class="mt-4">
+                <div class="text-md font-semibold mb-2">Recent SSH Activity</div>
+                <ul>
+                    {% for c in recent_ssh %}
+                    <li class="mb-1"><span class="font-mono text-sm">{{ c['ip'] }}</span>: <code class="bg-gray-100 rounded px-1">{{ c['cmd'] }}</code></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+        <div class="bg-white rounded-xl shadow p-6">
+            <div class="text-lg font-semibold mb-4">Top Web Credentials Tried</div>
+            <ul>
+                {% for (email, pwd), count in web_top_creds %}
+                <li class="mb-1"><span class="font-mono text-xs">{{ email }}</span> / <code class="bg-gray-200 rounded px-2 py-1">{{ pwd }}</code> <span class="text-pink-500 font-bold ml-2">{{ count }}</span></li>
+                {% endfor %}
+            </ul>
+            <div class="mt-4">
+                <div class="text-md font-semibold mb-2">Recent Web Logins</div>
+                <ul>
+                    {% for w in recent_web %}
+                    <li class="mb-1"><span class="font-mono text-sm">{{ w['ip'] }}</span>: <b>{{ w['email'] }}</b> / <code class="bg-gray-100 rounded px-1">{{ w['password'] }}</code></li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+  Plotly.newPlot("ssh_ip_bar", {{ ssh_ip_bar|safe }}, {});
+  Plotly.newPlot("web_ip_bar", {{ web_ip_bar|safe }}, {});
+  Plotly.newPlot("ssh_time_chart", {{ ssh_time_chart|safe }}, {});
+  Plotly.newPlot("web_time_chart", {{ web_time_chart|safe }}, {});
+</script>
+</body>
+</html>

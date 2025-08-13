@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="login-container mt-5 d-flex justify-content-center align-items-center">
+    <div class="card shadow-lg p-4" style="width: 400px;">
+        <div class="text-center mb-4">
+            <h2 class="text-primary">VA Bank Login</h2>
+            <p>Secure access to your account</p>
+        </div>
+        <form method="POST" action="{{ url_for('login') }}"> <!-- Form action set to '/login' -->
+            {{ form.hidden_tag() }}
+            <div class="mb-3">
+                <label for="email" class="form-label">{{ form.email.label }}</label>
+                {{ form.email(class="form-control", id="email", placeholder="Enter your email") }}
+            </div>
+            <div class="mb-3">
+                <label for="password" class="form-label">{{ form.password.label }}</label>
+                {{ form.password(class="form-control", id="password", placeholder="Enter your password") }}
+            </div>
+            <button type="submit" class="btn btn-primary w-100">{{ form.submit() }}</button>
+        </form>
+        <div class="text-center mt-3">
+            <a href="#" class="text-decoration-none text-secondary">Forgot password?</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,22 @@
+body {
+    background: linear-gradient(135deg, #007bff, #6610f2);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #ffffff;
+}
+
+.login-container {
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+h2 {
+    color: #007bff;
+}
+
+.card {
+    border: none;
+}
